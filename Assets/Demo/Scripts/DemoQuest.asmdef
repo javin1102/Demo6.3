@@ -1,0 +1,21 @@
+{
+    "name": "DemoQuest",
+    "rootNamespace": "",
+    "references": [
+        "GUID:1530a967b84cfb44dbdd5e8a1989764f",
+        "GUID:cd0624525ae0db442b9d3d7f27953406",
+        "GUID:25bb11dd35c063e4aa2c7cccc0212586",
+        "GUID:375af9abe7f79fb4c8bdf440a295f2e7",
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:77221876cc6b8244180b96e320b1bcd4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
