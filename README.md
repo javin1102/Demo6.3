@@ -1,4 +1,6 @@
 ## This project is for exploring Unity 6.3
+---
+
 
 ### What I wanna do in this project?
 - Explore how to make dialogue & quest for story based system
@@ -12,3 +14,5 @@
 
 ### Main focus in this Project
 - Research and Explore how to integrate and built scalable system so that it can be used in future project
+
+PS: Main Directory is **"Demo"**
