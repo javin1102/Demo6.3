@@ -1,11 +1,71 @@
 using System;
 using System.Collections.Generic;
+using NUnit.Framework;
 using R3;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Demo.Scripts
 {
+    public class QuestTaskGroup : IQuestTask
+    {
+
+        public ReactiveProperty<bool> IsCompleted { get; }
+        public ReactiveProperty<bool> IsActive { get; }
+
+        private readonly List<IQuestTask> _tasks;
+        private DisposableBag _disposableBag;
+
+        public QuestTaskGroup(List<IQuestTask> taskList)
+        {
+            _tasks = taskList;
+            _disposableBag = new DisposableBag();
+
+            IsCompleted = new ReactiveProperty<bool>(false);
+            IsActive = new ReactiveProperty<bool>(false);
+
+            var act = IsActive.Subscribe(OnActive);
+            _disposableBag.Add(act);
+            
+            foreach (IQuestTask questTask in _tasks)
+            {
+                var d = questTask.IsCompleted.Subscribe(CheckAllTasksCompleted);
+                _disposableBag.Add(d);
+            }
+        }
+        
+        private void OnActive(bool isActive)
+        {
+            foreach (IQuestTask questTask in _tasks)
+            {
+                questTask.IsActive.Value = isActive;
+            }
+        }
+
+        private void CheckAllTasksCompleted(bool isCompleted)
+        {
+            if (!isCompleted)
+                return;
+
+            foreach (IQuestTask questTask in _tasks)
+            {
+                if (!questTask.IsCompleted.Value)
+                    return;
+            }
+
+            Debug.LogError("All Tasks in Group Completed!");
+            IsCompleted.Value = true;
+        }
+
+        public void Dispose()
+        {
+            foreach (IQuestTask questTask in _tasks)
+                questTask.Dispose();
+
+            _disposableBag.Dispose();
+        }
+    }
+
     public class QuestTaskSequence : IQuestTask
     {
         public ReactiveProperty<bool> IsCompleted { get; }
@@ -64,6 +124,9 @@ namespace Demo.Scripts
 
         public void Dispose()
         {
+            foreach (var questTask in _tasks)
+                questTask.Dispose();
+
             IsActive?.Dispose();
             IsCompleted?.Dispose();
             _taskCompletedDisposable?.Dispose();
@@ -79,9 +142,16 @@ namespace Demo.Scripts
 
         public ReactiveProperty<bool> IsCompleted { get; }
         public ReactiveProperty<bool> IsActive { get; }
+        private string _id;
+
+        public PressButtonTask(int target, string id) : this(target)
+        {
+            _id = id;
+        }
 
         public PressButtonTask(int target)
         {
+            _id = "None";
             IsCompleted = new ReactiveProperty<bool>(false);
             IsActive = new ReactiveProperty<bool>(false);
 
@@ -106,6 +176,7 @@ namespace Demo.Scripts
                 return;
 
             currentCount++;
+            Debug.LogError(_id + " Press: " + currentCount);
             if (currentCount >= targetCount)
             {
                 Debug.LogError("Task Completed!");
@@ -125,27 +196,41 @@ namespace Demo.Scripts
     {
         public override string Name => "intro";
         private List<IQuestTask> _tasks;
-        private IDisposable test;
+        private QuestTaskGroup group;
 
         private void Start()
         {
             _tasks = new List<IQuestTask>
             {
-                new PressButtonTask(3),
                 new QuestTaskSequence(new List<IQuestTask>
                 {
-                    new PressButtonTask(1),
-                    new PressButtonTask(2),
+                    new PressButtonTask(2, "1"),
+                    new PressButtonTask(2, "1.1"),
+                    new QuestTaskGroup(new List<IQuestTask>()
+                    {
+                        new PressButtonTask(2, "2"),
+                        new PressButtonTask(3, "3"),
+                        new QuestTaskSequence(new List<IQuestTask>
+                        {
+                            new PressButtonTask(4, "4"),
+                            new PressButtonTask(8, "5"),
+                        })
+                    })
                 }),
-                new PressButtonTask(5)
             };
 
-            foreach (IQuestTask questTask in _tasks)
-            {
-                questTask.IsActive.Value = true;
-                questTask.IsCompleted.Subscribe(CheckAllTasksCompleted).AddTo(this);
-            }
+            group = new QuestTaskGroup(_tasks);
+            group.IsCompleted.Subscribe(CheckTasksGroupIsCompleted).AddTo(this);
+            group.IsActive.Value = true;
+        }
 
+        private void CheckTasksGroupIsCompleted(bool isCompleted)
+        {
+            if (!isCompleted)
+                return;
+
+            Debug.LogError("Intro Quest Completed!");
+            CompleteQuest();
         }
 
         private void CheckAllTasksCompleted(bool isCompleted)
@@ -165,10 +250,11 @@ namespace Demo.Scripts
 
         private void OnDestroy()
         {
-            foreach (IQuestTask questTask in _tasks)
-            {
-                questTask.Dispose();
-            }
+            group.Dispose();
+            // foreach (IQuestTask questTask in _tasks)
+            // {
+            //     questTask.Dispose();
+            // }
         }
 
         private void Update()

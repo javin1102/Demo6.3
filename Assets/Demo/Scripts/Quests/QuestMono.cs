@@ -1,4 +1,5 @@
 using System;
+using PixelCrushers.DialogueSystem;
 using R3;
 using UnityEngine;
 
@@ -18,7 +19,7 @@ namespace Demo.Scripts
             Observable.FromEvent(
                 h => onQuestComplete += h,
                 h => onQuestComplete -= h
-            ).Subscribe(CleanUp);
+            ).Subscribe(CleanUp).AddTo(this);
         }
 
         private void CleanUp(Unit x)
@@ -30,6 +31,7 @@ namespace Demo.Scripts
         protected void CompleteQuest()
         {
             onQuestComplete?.Invoke();
+            QuestLog.SetQuestState(Name, QuestState.Success);
         }
     }
 
