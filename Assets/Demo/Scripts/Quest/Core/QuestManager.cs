@@ -11,6 +11,11 @@ namespace Demo.Scripts
         public string FirstActiveQuest => GetActiveQuests()[0];
 
         public IQuest currentQuest;
+
+        private void Start()
+        {
+            QualitySettings.vSyncCount = 1;
+        }
         
         public List<string> GetActiveQuests()
         {
